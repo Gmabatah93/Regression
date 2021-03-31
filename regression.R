@@ -112,73 +112,97 @@ mod %>% augment() %>% arrange(desc(.hat)) %>% head() %>% select(.hat, everything
 mod %>% augment() %>% arrange(desc(.cooksd)) %>% head() %>% select(.cooksd, everything())
 
 
-# -- MARIOKART: (Exploratory Analysis)
+
+
+# MARIOKART:
+
+# Data
 mariokart <- openintro::mariokart
-mariokart <- mariokart %>% filter(total_pr < 100) # Outlier
+# - clean: remove outlier
+mariokart <- mariokart %>% filter(total_pr < 100)
 mariokart <- mariokart %>% 
   select(total_pr, everything(), -id)
-# eda
+
+# EDA: Categorical
 mariokart %>% skimr::skim()
 mariokart %>% glimpse()
-# - categorical analysis
+
+# Visual: Price ~ Condition
 mariokart %>% 
   ggplot(aes(cond, total_pr)) +
   geom_boxplot() +
   ggtitle("How does price vary by COND ?")
+# - stat test: significant
 t.test(total_pr ~ cond, data = mariokart)
 
+# Visual: Price ~ Ship
 mariokart %>% 
   ggplot(aes(ship_sp, total_pr)) +
   geom_boxplot() +
   ggtitle("How does price vary by Ship ?")
+# - stat test: significant
 lm(total_pr ~ ship_sp, data = mariokart, family = "binomial") %>% tidy() %>% mutate(p.value = round(p.value,3))
 
+# Visual: Price ~ Stock Photo
 mariokart %>% 
   ggplot(aes(stock_photo, total_pr)) +
   geom_boxplot() +
   ggtitle("How does price vary by Stock Photo ?")
+# - stat test: significant
 t.test(total_pr ~ cond, data = mariokart)
 
-# - numerical analysis
+# EDA: Numerical
+# Corrplot
 mariokart %>% select(total_pr, duration, n_bids, start_pr, ship_pr, seller_rate, wheels) %>% 
   cor() %>% corrplot::corrplot(method = "number", type = "upper")
+# Visual: wheels (0.8)
 mariokart %>% 
   ggplot(aes(wheels, total_pr, color = cond)) +
   geom_point(alpha = 0.3) +
   geom_smooth(method = "lm", se = FALSE) +
   ggtitle("How does Price vary by # of Wheels ?")
+# - stat test: wheels and Condition accounts for 71.7% of variation on Total Price
 lm(total_pr ~ wheels + cond, data = mariokart) %>% glance() %>% select(r.squared)
 
+# Visual: durartion (-0.37)
 mariokart %>% 
   ggplot(aes(duration, total_pr, color = cond)) +
   geom_point(alpha = 0.3) +
   geom_smooth(method = "lm", se = FALSE) +
   ggtitle("How does Price vary by duration accting for cond ?")
+# - stat test: Duration and Condition accounts for 43.5% of variation on Total Price
 lm(total_pr ~ duration*cond, data = mariokart) %>% glance() %>% select(r.squared)
 
+# Visual: start price (-0.37)
 mariokart %>% 
   ggplot(aes(start_pr, total_pr, color = cond)) +
   geom_point(alpha = 0.3) +
   geom_smooth(method = "lm", se = FALSE) +
   ggtitle("How does Price vary by Start_Pr accting for cond ?")
+# - stat test: Start Price and Condition accounts for 44% of variation on Total Price
 lm(total_pr ~ start_pr + cond, data = mariokart) %>% glance() %>% select(r.squared)
 
-# model analysis
+# MODELING
 lm(total_pr ~ wheels + duration + cond, data = mariokart) %>% 
   glance %>% select(r.squared)
 lm(total_pr ~ wheels + duration + cond + duration:cond, data = mariokart) %>% 
   glance %>% select(r.squared)
 lm(total_pr ~ wheels + duration + start_pr + cond + duration:cond, data = mariokart) %>% 
   glance %>% select(r.squared)
-# model fit
+
+# Fit
 mod <- lm(total_pr ~ wheels + duration + start_pr + cond + duration:cond, data = mariokart)
 mod %>% tidy() %>% mutate(p.value = round(p.value, 3))
+# - mod: duration:condused NOT significant
 mod_2 <- lm(total_pr ~ wheels + duration + start_pr + cond, data = mariokart)
 mod_2 %>% tidy() %>% mutate(p.value = round(p.value, 3))
+# - mod 2: duration NOT significant
 mod_3 <- lm(total_pr ~ wheels + start_pr + cond, data = mariokart)
 mod_3 %>% tidy() %>% mutate(p.value = round(p.value, 3))
 mod_3 %>% glance() %>% select(r.squared, rse = sigma)
-# residual analysis
+# - mod 3: r2 = 75.8% | RSE = 4.54
+
+# Residual Analysis
 mod_3 %>% plot(which = 3) # Model Check
 mod_3 %>% plot(which = 2) # Normality check
 mod_3 %>% plot(which = 4) # Outlier Check
@@ -397,52 +421,6 @@ cv_lasso <- cv.glmnet(x,y, alpha = 1)
 cv_lasso %>% plot()
 cv_lasso %>% coef()
 
-# -- MTCARS 
-dat <- mtcars
-# eda
-dat %>% cor() %>% 
-  corrplot::corrplot(method = "number", type = "upper")
-# partial Correlation
-df_cars <- dat %>% select(mpg, drat, hp)
-
-mod <- lm(mpg ~ drat, data = df_cars)
-mod_2 <- lm(mpg ~ hp, data = df_cars)
-mod_3 <- lm(drat ~ hp, data = df_cars)
-mod_4 <- lm(hp ~ drat, data = df_cars)
-mod_5 <- lm(mpg ~ drat + hp, data = df_cars)
-
-mod %>% summary()
-mod_2 %>% summary()
-mod_3 %>% summary()
-mod_4 %>% summary()
-mod_5 %>% summary()
-
-lowerMat(partial.r(df_cars))
-
-# -- ADVERTISEMENT
-dat <- read_csv("Advertising.csv")
-# eda
-dat[,-1] %>% cor() %>% corrplot::corrplot(method = "number", type = "upper")
-dat %>% 
-  ggplot(aes(TV, sales)) +
-  geom_point() +
-  geom_smooth(method = "lm")
-dat %>% 
-  ggplot(aes(radio, sales)) +
-  geom_point() +
-  geom_smooth(method = "lm")
-dat %>% 
-  ggplot(aes(newspaper, sales)) +
-  geom_point() +
-  geom_smooth(method = "lm")
-# fit
-mod <- lm(sales ~ TV + radio + newspaper, data = dat)
-mod_2 <- lm(sales ~ TV + radio + radio:TV, data = dat)
-# assessment
-mod %>% summary()
-mod %>% tidy(conf.int = TRUE); mod %>% glance()
-mod_2 %>% summary()
-
 
 # -- BOSTON
 dat <- tibble(MASS::Boston)
@@ -471,27 +449,6 @@ mod_4 %>% summary()
 mod_full %>% summary()
 # predict
 mod %>% predict(data.frame(lstat = c(5,10,15)), interval = "confidence")
-
-
-# -- BABIES -- (Parrelel)
-dat <- openintro::babies
-dat_mutate <- dat %>% mutate(parity = factor(parity),
-                             smoke = factor(smoke))
-# eda
-dat_mutate %>% 
-  ggplot(aes(age, bwt, color = parity)) +
-  geom_point() +
-  geom_smooth(method = "lm", se = FALSE)
-dat_mutate %>% 
-  ggplot(aes(gestation, bwt, color = smoke)) +
-  geom_point() +
-  geom_smooth(method = "lm", se = FALSE)
-# fit
-mod <- lm(bwt ~ age + parity, data = dat_mutate)
-mod_2 <- lm(bwt ~ gestation + smoke, data = dat_mutate)
-# assesment
-mod %>% summary()
-mod_2 %>% summary()
 
 
 
@@ -591,53 +548,7 @@ mod_2 %>% summary()
 mod_3 %>% summary()
 
 
-# -- SAT
-dat <- read_csv("https://assets.datacamp.com/production/repositories/845/datasets/1a12a19d2cec83ca0b58645689987e2025d91383/SAT.csv")
 
-
-# -- CUSTOMER LIFETIME VALUE --
-dat <- read_csv("https://assets.datacamp.com/production/repositories/1861/datasets/c18f1ab90ca134ecd8ab51ed34d285df9fc3059b/salesData.csv")
-# eda
-dat %>% select_if(is.numeric) %>% select(-id) %>% 
-  cor %>% corrplot::corrplot()
-#       - salesThisMon ~ mostFreqStore
-dat %>% 
-  ggplot(aes(mostFreqStore, salesThisMon)) + 
-  geom_boxplot() +
-  theme(axis.text.x = element_text(angle = 45, hjust = 1))
-#       - salesThisMon ~ preferredBrand
-dat %>% 
-  ggplot(aes(preferredBrand, salesThisMon)) +
-  geom_boxplot() +
-  theme(axis.text.x = element_text(angle = 45, hjust = 1))
-#       - salesThisMon ~ salesLast3Mon
-dat %>% 
-  ggplot(aes(salesLast3Mon, salesThisMon)) +
-  geom_point() +
-  geom_smooth(method = "lm")
-# fit
-mod <- lm(salesThisMon ~ salesLast3Mon, data = dat)
-mod_full <- lm(salesThisMon ~ .-id, data = dat)
-mod_2 <- lm(salesThisMon ~ .-id-preferredBrand-nBrands, data = dat)
-# assessment
-mod %>% tidy()
-mod %>% glance()
-mod_full %>% tidy()
-mod_full %>% glance()
-mod_full %>% rms::vif()   # Multicollinerity
-mod_2 %>% tidy()
-mod_2 %>% glance()
-mod_2 %>% rms::vif()
-# prediction
-mod_2_pred <- predict(mod_2)
-mod_2_pred %>% mean()
-# diagnostics
-autoplot(mod_2, which = 1:3, ncol = 1)    # Linear-Normality-Hetroscedatic-NoEndogeneity-NoAutocorrelation
-autoplot(mod_2, which = 4:6, ncol = 1)
-mod_2 %>% broom::augment() %>% select(id, salesThisMon, .hat) %>% 
-  arrange(desc(.hat))                     # Outliers-Leverage
-mod_2 %>% broom::augment() %>% select(id, salesThisMon, .cooksd) %>%
-  arrange(desc(.cooksd))                  # Outliers-Influential
 
 #
 # REGRESSION - Generalized Linear Models ----
