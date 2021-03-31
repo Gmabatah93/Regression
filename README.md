@@ -41,3 +41,52 @@
 
 * **Causes**: Wrong Model | Outliers | Non-Normal Errors
 * **Remedies**: Transformation(Log|Sqrt|BoxCox) | Weighted Regression
+
+---
+
+# Simple Linear Regression
+<img src="Images/SLR.PNG" width="450">
+
+### Maximum Likelihood Estimates
+* Likelihood Function: probability of getting this exact dataset given a known model
+* Maximum Likelihood: what parameter values maximized the likelihood function
+
+## Least Squares Error
+<img src="Images/SLR_LeastSquare.PNG" width="250">
+
+Standard Error | Confidence Interval | Hypothesis Test
+--- | --- | ---
+<img src="Images/SLR_SE.PNG" width="250"> | <img src="Images/SLR_CI.PNG" width="250"> | <img src="Images/SLR_Hypo.PNG" width="200">
+
+---
+
+# Multiple Regression
+> **Marginal Effect** - "Holding all other variables constant"\
+> **Simplest** - "Strive for Parsimony"\
+> **Interactions** - "Influence of x on y depends on the magnitude of x"
+
+## Multi-Collinearity "Confounding Variables"
+**_CAUSES_**
+* Sampling
+* Population demands Correlation
+* Wrong Model
+
+**_PROBLEMS_**
+* Changes Coefs
+* SE(Bp) becomes Large
+* Overall Model is Significant, however Individual coefs may not be
+* Simpson's Paradox
+
+**_DETECT_**
+1. Correlation Matrix
+2. Variance Inflation Factor
+3. Eigensystem Analysis
+
+**_ADDRESS_**
+* VIF [ **> 4**-Investigate | **>10**-Remove ]
+* PCA: PLS | PLR
+* REGULARIZATION
+<img src="Images/Multi_Reg.PNG" width="400">
+
+## Model-Selection
+**BEST SUBSET | Forward | Backward
